@@ -258,14 +258,12 @@ export default function TaxCalculator() {
           </h3>
           {result ? (
             <div className="space-y-3 text-sm md:text-base">
-              {result.netSalary > 0 && (
-                <SummaryRow
-                  label="Standard Deduction"
-                  value={result.standardDeduction}
-                  formatter={formatCurrency}
-                  highlight
-                />
-              )}
+              <SummaryRow
+                label="Standard Deduction"
+                value={result.netSalary > 0 ? result.standardDeduction : "₹" + 0}
+                formatter={result.netSalary > 0 ? formatCurrency : (v: any) => v}
+                highlight
+              />
               <SummaryRow
                 label="Taxable Salary (Net)"
                 value={result.netSalary}
@@ -376,10 +374,10 @@ const SummaryRow = ({
   highlight = false,
 }: any) => (
   <div
-    className={`flex justify-between ${bold ? "font-semibold text-gray-800 dark:text-gray-100" : "text-gray-600 dark:text-gray-300"
+    className={`flex justify-between items-start gap-4 ${bold ? "font-semibold text-gray-800 dark:text-gray-100" : "text-gray-600 dark:text-gray-300"
       } ${isTotal ? "text-lg py-1" : ""} ${highlight ? "text-orange-600 dark:text-orange-400" : ""}`}
   >
-    <span>{label}</span>
-    <span>{formatter(value)}</span>
+    <span className="shrink-0">{label}</span>
+    <span className="text-right text-sm md:text-base break-words max-w-[70%] leading-tight">{formatter(value)}</span>
   </div>
 );
