@@ -258,12 +258,14 @@ export default function TaxCalculator() {
           </h3>
           {result ? (
             <div className="space-y-3 text-sm md:text-base">
-              <SummaryRow
-                label="Standard Deduction"
-                value={result.standardDeduction}
-                formatter={formatCurrency}
-                highlight
-              />
+              {result.netSalary > 0 && (
+                <SummaryRow
+                  label="Standard Deduction"
+                  value={result.standardDeduction}
+                  formatter={formatCurrency}
+                  highlight
+                />
+              )}
               <SummaryRow
                 label="Taxable Salary (Net)"
                 value={result.netSalary}
