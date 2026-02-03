@@ -2,6 +2,22 @@
 
 import { useState, useEffect } from "react";
 
+interface TaxResult {
+  standardDeduction: number;
+  ifhpDeduction: number;
+  taxableIfhp: number;
+  netSalary: number;
+  normalIncome: number;
+  taxNormal: number;
+  taxLtcg: number;
+  totalIncome: number;
+  taxBeforeSurcharge: number;
+  surchargeRate: number;
+  surchargeAmount: number;
+  cessAmount: number;
+  totalTax: number;
+}
+
 export default function TaxCalculator() {
   const [salary, setSalary] = useState<string>("");
   const [ifhp, setIfhp] = useState<string>("");
@@ -9,7 +25,7 @@ export default function TaxCalculator() {
   const [ifos, setIfos] = useState<string>("");
   const [ltcg, setLtcg] = useState<string>("");
   const [regime, setRegime] = useState<"old" | "new">("new");
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<TaxResult | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const [darkMode, setDarkMode] = useState<boolean>(false);
@@ -17,11 +33,10 @@ export default function TaxCalculator() {
 
   useEffect(() => {
     setMounted(true);
-    const savedTheme = localStorage.getItem("theme");
-    if (savedTheme === "dark") {
-      setDarkMode(true);
-    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+
 
   useEffect(() => {
     if (!mounted) return;
@@ -200,7 +215,8 @@ export default function TaxCalculator() {
     setResult(null);
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: number | string) => {
+    if (typeof amount === "string") return amount;
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
@@ -446,7 +462,7 @@ const InputGroup = ({ label, value, onChange, error, required }: InputGroupProps
 interface SummaryRowProps {
   label: string;
   value: number | string;
-  formatter: (value: any) => string | number;
+  formatter: (value: number | string) => string | number;
   bold?: boolean;
   isTotal?: boolean;
   highlight?: boolean;
