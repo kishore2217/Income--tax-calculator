@@ -173,6 +173,15 @@ export default function TaxCalculator() {
     });
   };
 
+  const resetFields = () => {
+    setSalary("");
+    setIfhp("");
+    setPgbp("");
+    setIfos("");
+    setLtcg("");
+    setResult(null);
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -189,10 +198,16 @@ export default function TaxCalculator() {
         </h2>
         <button
           onClick={() => setDarkMode(!darkMode)}
-          className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition"
+          className={`relative h-6 w-11 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${darkMode ? "bg-blue-600" : "bg-gray-300"
+            }`}
           aria-label="Toggle Dark Mode"
         >
-          {darkMode ? "☀️" : "🌙"}
+          <span
+            className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transform transition-transform duration-300 flex items-center justify-center text-[10px] ${darkMode ? "translate-x-5" : "translate-x-0"
+              }`}
+          >
+            {darkMode ? "🌙" : "☀️"}
+          </span>
         </button>
       </div>
 
@@ -248,12 +263,20 @@ export default function TaxCalculator() {
             onChange={setLtcg}
           />
 
-          <button
-            onClick={calculateTax}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 mt-4 cursor-pointer"
-          >
-            Calculate Tax
-          </button>
+          <div className="flex gap-4 mt-4">
+            <button
+              onClick={resetFields}
+              className="flex-1 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-100 font-semibold py-3 px-6 rounded-lg transition duration-200 cursor-pointer"
+            >
+              Reset
+            </button>
+            <button
+              onClick={calculateTax}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 cursor-pointer"
+            >
+              Calculate Tax
+            </button>
+          </div>
         </div>
 
         <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg border border-gray-200 dark:border-gray-600">
