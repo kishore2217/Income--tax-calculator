@@ -10,6 +10,7 @@ export default function TaxCalculator() {
   const [ltcg, setLtcg] = useState<string>("");
   const [regime, setRegime] = useState<"old" | "new">("new");
   const [result, setResult] = useState<any>(null);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const [darkMode, setDarkMode] = useState<boolean>(false);
   const [mounted, setMounted] = useState<boolean>(false);
@@ -34,7 +35,23 @@ export default function TaxCalculator() {
     }
   }, [darkMode, mounted]);
 
+  const validate = () => {
+    const newErrors: Record<string, string> = {};
+    if (!salary) newErrors.salary = "Salary is required";
+    else if (Number(salary) < 0) newErrors.salary = "Salary cannot be negative";
+
+    if (Number(ifhp) < 0) newErrors.ifhp = "Value cannot be negative";
+    if (Number(pgbp) < 0) newErrors.pgbp = "Value cannot be negative";
+    if (Number(ifos) < 0) newErrors.ifos = "Value cannot be negative";
+    if (Number(ltcg) < 0) newErrors.ltcg = "Value cannot be negative";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const calculateTax = () => {
+    if (!validate()) return;
+
     const valSalary = Number(salary) || 0;
     const rawIfhp = Number(ifhp) || 0;
     const valPgbp = Number(pgbp) || 0;
@@ -179,6 +196,7 @@ export default function TaxCalculator() {
     setPgbp("");
     setIfos("");
     setLtcg("");
+    setErrors({});
     setResult(null);
   };
 
@@ -192,31 +210,33 @@ export default function TaxCalculator() {
 
   return (
     <div className="w-full max-w-4xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-xl shadow-lg transition-colors duration-200" id="calculator">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 flex-1 text-center pl-8">
+      <div className="flex justify-between items-center mb-6 pl-1 pr-1 md:px-0 relative">
+        <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100 flex-1 text-center leading-tight">
           Income Tax Calculator
         </h2>
-        <button
-          onClick={() => setDarkMode(!darkMode)}
-          className={`relative h-6 w-11 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${darkMode ? "bg-blue-600" : "bg-gray-300"
-            }`}
-          aria-label="Toggle Dark Mode"
-        >
-          <span
-            className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow transform transition-transform duration-300 flex items-center justify-center text-[10px] ${darkMode ? "translate-x-5" : "translate-x-0"
+        <div className="flex shrink-0 items-center justify-end absolute right-0 top-1/2 -translate-y-1/2 md:relative md:top-auto md:translate-y-0 md:transform-none">
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className={`relative h-6 w-11 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm ${darkMode ? "bg-blue-600 ring-1 ring-blue-400" : "bg-gray-300 ring-1 ring-gray-200"
               }`}
+            aria-label="Toggle Dark Mode"
           >
-            {darkMode ? "🌙" : "☀️"}
-          </span>
-        </button>
+            <span
+              className={`absolute left-1 top-1 h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform duration-300 flex items-center justify-center text-[10px] ${darkMode ? "translate-x-5" : "translate-x-0"
+                }`}
+            >
+              {darkMode ? "🌙" : "☀️"}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Regime Toggle */}
       <div className="flex justify-center mb-8">
-        <div className="bg-gray-100 dark:bg-gray-700 p-1 rounded-lg inline-flex">
+        <div className="bg-gray-100 dark:bg-gray-700 p-1 rounded-lg inline-flex w-full md:w-auto">
           <button
             onClick={() => setRegime("new")}
-            className={`px-6 py-2 rounded-md text-sm font-semibold transition-all ${regime === "new"
+            className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-md text-sm font-semibold transition-all ${regime === "new"
               ? "bg-blue-600 text-white shadow-sm"
               : "text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
               }`}
@@ -225,7 +245,7 @@ export default function TaxCalculator() {
           </button>
           <button
             onClick={() => setRegime("old")}
-            className={`px-6 py-2 rounded-md text-sm font-semibold transition-all ${regime === "old"
+            className={`flex-1 md:flex-none px-4 md:px-6 py-2 rounded-md text-sm font-semibold transition-all ${regime === "old"
               ? "bg-blue-600 text-white shadow-sm"
               : "text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100"
               }`}
@@ -241,48 +261,54 @@ export default function TaxCalculator() {
             label="Salary (Gross)"
             value={salary}
             onChange={setSalary}
+            error={errors.salary}
+            required
           />
           <InputGroup
             label="Income from House Property (Net Annual Value)"
             value={ifhp}
             onChange={setIfhp}
+            error={errors.ifhp}
           />
           <InputGroup
             label="PGBP (Business Income)"
             value={pgbp}
             onChange={setPgbp}
+            error={errors.pgbp}
           />
           <InputGroup
             label="Income from Other Sources"
             value={ifos}
             onChange={setIfos}
+            error={errors.ifos}
           />
           <InputGroup
             label="Long-Term Capital Gains (LTCG)"
             value={ltcg}
             onChange={setLtcg}
+            error={errors.ltcg}
           />
 
-          <div className="flex gap-4 mt-4">
+          <div className="flex gap-4 mt-6">
             <button
               onClick={resetFields}
-              className="flex-1 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-100 font-semibold py-3 px-6 rounded-lg transition duration-200 cursor-pointer"
+              className="flex-1 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-800 dark:text-gray-100 font-semibold py-3 px-4 rounded-lg transition duration-200 cursor-pointer text-sm md:text-base"
             >
               Reset
             </button>
             <button
               onClick={calculateTax}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 cursor-pointer"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 cursor-pointer text-sm md:text-base"
             >
               Calculate Tax
             </button>
           </div>
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-700 p-6 rounded-lg border border-gray-200 dark:border-gray-600">
-          <h3 className="text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200 border-b dark:border-gray-600 pb-2 flex justify-between items-center">
+        <div className="bg-gray-50 dark:bg-gray-700 p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-600">
+          <h3 className="text-lg md:text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200 border-b dark:border-gray-600 pb-2 flex justify-between items-center">
             <span>Tax Breakdown</span>
-            <span className="text-sm font-normal text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-1 rounded">
+            <span className="text-xs md:text-sm font-normal text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-1 rounded">
               {regime === "new" ? "New Regime" : "Old Regime"}
             </span>
           </h3>
@@ -363,11 +389,11 @@ export default function TaxCalculator() {
               />
 
               <div className="mt-4 pt-4 border-t-2 border-blue-500">
-                <div className="flex justify-between items-center">
-                  <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-2">
+                  <span className="text-lg font-bold text-gray-900 dark:text-gray-100 shrink-0">
                     Net Tax Payable
                   </span>
-                  <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                  <span className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400 text-center md:text-right break-all leading-tight">
                     {formatCurrency(result.totalTax)}
                   </span>
                 </div>
@@ -387,19 +413,25 @@ export default function TaxCalculator() {
   );
 }
 
-const InputGroup = ({ label, value, onChange }: any) => (
+const InputGroup = ({ label, value, onChange, error, required }: any) => (
   <div className="flex flex-col">
-    <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{label}</label>
+    <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+      {label} {required && <span className="text-red-500">*</span>}
+    </label>
     <div className="relative">
       <span className="absolute left-3 top-2 text-gray-500 dark:text-gray-400">₹</span>
       <input
         type="number"
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full pl-8 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-black dark:text-white dark:bg-gray-700"
+        className={`w-full pl-8 pr-4 py-2 border rounded-md outline-none transition text-black dark:text-white dark:bg-gray-700 ${error
+          ? "border-red-500 focus:ring-2 focus:ring-red-500"
+          : "border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          }`}
         placeholder="0"
       />
     </div>
+    {error && <span className="text-xs text-red-500 mt-1">{error}</span>}
   </div>
 );
 
@@ -412,10 +444,10 @@ const SummaryRow = ({
   highlight = false,
 }: any) => (
   <div
-    className={`flex justify-between items-start gap-4 ${bold ? "font-semibold text-gray-800 dark:text-gray-100" : "text-gray-600 dark:text-gray-300"
+    className={`flex justify-between items-start gap-2 ${bold ? "font-semibold text-gray-800 dark:text-gray-100" : "text-gray-600 dark:text-gray-300"
       } ${isTotal ? "text-lg py-1" : ""} ${highlight ? "text-orange-600 dark:text-orange-400" : ""}`}
   >
-    <span className="shrink-0">{label}</span>
-    <span className="text-right text-sm md:text-base break-words max-w-[70%] leading-tight">{formatter(value)}</span>
+    <span className="flex-1 break-words">{label}</span>
+    <span className="text-right text-sm md:text-base break-words max-w-[60%] leading-tight">{formatter(value)}</span>
   </div>
 );
