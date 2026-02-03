@@ -5,10 +5,13 @@ A modern, fast, and responsive web application designed to help users estimate t
 ## ✨ Features
 
 - **Real-time Calculation**: Instant feedback as you input your financial details.
-- **Comprehensive Analysis**: Supports various income streams and deductions (Standard, 80C, 80D, etc.).
+- **Robust Validation**: Ensures data integrity with mandatory field checks and non-negative value constraints.
+- **Comprehensive Analysis**: Supports Salary, House Property (with **30% Standard Deduction u/s 24(a)**), PGBP, Other Sources, and LTCG.
+- **Detailed Tax Breakdown**: Transparent view of Standard Deduction, Surcharge, Cess, and Regime-specific slabs.
 - **Dual Regime Support**: Compare taxes under both the **New Regime** and **Old Regime**.
-- **Dark Mode**: Fully supported dark and light themes for comfortable viewing in any environment.
-- **Responsive Design**: Optimized for desktops, tablets, and mobile devices.
+- **Dark Mode**: Fully supported dark and light themes with a smooth toggle switch.
+- **Responsive Design**: Mobile-first layout optimized for all screen sizes.
+- **CI/CD Integration**: Automated testing and build checks using **GitHub Actions**.
 
 ## 🛠️ Tech Stack
 
@@ -61,14 +64,15 @@ Follow these steps to set up the project locally on your machine.
    ```
 
 4. **Open your browser:**
-   Navigate to [http://localhost:3000](http://localhost:3000) to see the application running.
+   Navigate to [http://localhost:3000](http://localhost:3000) or [https://income-tax-calculator-gx16-ocrn6t261-kishore2217s-projects.vercel.app/] to see the application running.
 
 ## 📖 Usage
 
 1. Enter your **Gross Annual Income**.
 2. Add any applicable **Exemptions** (e.g., HRA, LTA) and **Deductions** (e.g., 80C, 80D).
-3. The calculator will automatically display your taxable income and the tax payable under both regimes.
-4. Toggle the theme button in the top right to switch between **Light** and **Dark** modes.
+3. The calculator will automatically display your taxable income and the tax payable under both regimes (click "Calculate Tax" after entering details).
+4. Use the **Reset** button to instantly clear all inputs and start fresh.
+5. Toggle the theme button in the top right to switch between **Light** and **Dark** modes.
 
 ## ☁️ Deployment
 
