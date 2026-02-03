@@ -36,7 +36,7 @@ export default function TaxCalculator() {
 
   const calculateTax = () => {
     const valSalary = Number(salary) || 0;
-    const valIfhp = Number(ifhp) || 0;
+    const rawIfhp = Number(ifhp) || 0;
     const valPgbp = Number(pgbp) || 0;
     const valIfos = Number(ifos) || 0;
     const valLtcg = Number(ltcg) || 0;
@@ -49,8 +49,13 @@ export default function TaxCalculator() {
     // 1. Net Salary
     const netSalary = Math.max(valSalary - standardDeduction, 0);
 
+    // 1b. Net House Property Income (30% Standard Deduction)
+    const ifhpHasDeduction = rawIfhp > 0;
+    const ifhpDeduction = ifhpHasDeduction ? rawIfhp * 0.3 : 0;
+    const taxableIfhp = rawIfhp - ifhpDeduction;
+
     // 2. Normal Income
-    const normalIncome = netSalary + valIfhp + valPgbp + valIfos;
+    const normalIncome = netSalary + taxableIfhp + valPgbp + valIfos;
 
     // 3. Tax on Normal Income
     let taxNormal = 0;
@@ -153,6 +158,8 @@ export default function TaxCalculator() {
 
     setResult({
       standardDeduction,
+      ifhpDeduction,
+      taxableIfhp,
       netSalary,
       normalIncome,
       taxNormal,
@@ -221,7 +228,7 @@ export default function TaxCalculator() {
             onChange={setSalary}
           />
           <InputGroup
-            label="Income from House Property (Net)"
+            label="Income from House Property (Net Annual Value)"
             value={ifhp}
             onChange={setIfhp}
           />
@@ -269,6 +276,14 @@ export default function TaxCalculator() {
                 value={result.netSalary}
                 formatter={formatCurrency}
               />
+              {result.ifhpDeduction > 0 && (
+                <SummaryRow
+                  label="House Property Standard Deduction (30%)"
+                  value={result.ifhpDeduction}
+                  formatter={formatCurrency}
+                  highlight
+                />
+              )}
               <SummaryRow
                 label="Other Normal Income"
                 value={result.normalIncome - result.netSalary}
