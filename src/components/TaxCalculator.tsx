@@ -317,7 +317,7 @@ export default function TaxCalculator() {
               <SummaryRow
                 label="Standard Deduction"
                 value={result.netSalary > 0 ? result.standardDeduction : "₹" + 0}
-                formatter={result.netSalary > 0 ? formatCurrency : (v: any) => v}
+                formatter={result.netSalary > 0 ? formatCurrency : (v: string | number) => v}
                 highlight
               />
               <SummaryRow
@@ -329,7 +329,7 @@ export default function TaxCalculator() {
                 <SummaryRow
                   label="House Property Standard Deduction (30%)"
                   value={result.ifhpDeduction > 0 ? result.ifhpDeduction : "₹" + 0}
-                  formatter={result.ifhpDeduction > 0 ? formatCurrency : (v: any) => v}
+                  formatter={result.ifhpDeduction > 0 ? formatCurrency : (v: string | number) => v}
                   highlight
                 />
               )}
@@ -401,7 +401,7 @@ export default function TaxCalculator() {
             </div>
           ) : (
             <div className="text-gray-500 dark:text-gray-400 text-center py-10">
-              Click "Calculate Tax" to see the breakdown.
+              Click &quot;Calculate Tax&quot; to see the breakdown.
             </div>
           )}
         </div>
@@ -413,7 +413,15 @@ export default function TaxCalculator() {
   );
 }
 
-const InputGroup = ({ label, value, onChange, error, required }: any) => (
+interface InputGroupProps {
+  label: string;
+  value: string | number;
+  onChange: (value: string) => void;
+  error?: string;
+  required?: boolean;
+}
+
+const InputGroup = ({ label, value, onChange, error, required }: InputGroupProps) => (
   <div className="flex flex-col">
     <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
       {label} {required && <span className="text-red-500">*</span>}
@@ -435,6 +443,15 @@ const InputGroup = ({ label, value, onChange, error, required }: any) => (
   </div>
 );
 
+interface SummaryRowProps {
+  label: string;
+  value: number | string;
+  formatter: (value: any) => string | number;
+  bold?: boolean;
+  isTotal?: boolean;
+  highlight?: boolean;
+}
+
 const SummaryRow = ({
   label,
   value,
@@ -442,7 +459,7 @@ const SummaryRow = ({
   bold = false,
   isTotal = false,
   highlight = false,
-}: any) => (
+}: SummaryRowProps) => (
   <div
     className={`flex justify-between items-start gap-2 ${bold ? "font-semibold text-gray-800 dark:text-gray-100" : "text-gray-600 dark:text-gray-300"
       } ${isTotal ? "text-lg py-1" : ""} ${highlight ? "text-orange-600 dark:text-orange-400" : ""}`}
