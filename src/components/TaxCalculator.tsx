@@ -28,7 +28,7 @@ export default function TaxCalculator() {
   const [result, setResult] = useState<TaxResult | null>(null);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
-  const [darkMode, setDarkMode] = useState<boolean>(false);
+  const [darkMode, setDarkMode] = useState<boolean>(true);
   const [mounted, setMounted] = useState<boolean>(false);
 
   useEffect(() => {
