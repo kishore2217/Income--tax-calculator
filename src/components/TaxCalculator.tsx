@@ -279,8 +279,8 @@ export default function TaxCalculator() {
               {result.ifhpDeduction > 0 && (
                 <SummaryRow
                   label="House Property Standard Deduction (30%)"
-                  value={result.ifhpDeduction}
-                  formatter={formatCurrency}
+                  value={result.netSalary > 0 ? result.ifhpDeduction : "₹" + 0}
+                  formatter={result.netSalary > 0 ? formatCurrency : (v: any) => v}
                   highlight
                 />
               )}
