@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -28,7 +28,22 @@ export default function TaxCalculator() {
   const [ltcg, setLtcg] = useState<string>("");
   const [regime, setRegime] = useState<"old" | "new">("new");
   const [result, setResult] = useState<TaxResult | null>(null);
-  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // Real-time validation derived state
+  const errors: { [key: string]: string } = {};
+  if (Number(salary) < 0) errors.salary = "Salary cannot be negative";
+  if (Number(ifhp) < -200000) errors.ifhp = "House property loss capped at ₹2,00,000";
+  if (Number(pgbp) < 0) errors.pgbp = "Value cannot be negative";
+  if (Number(ifos) < 0) errors.ifos = "Value cannot be negative";
+  if (Number(ltcg) < 0) errors.ltcg = "Value cannot be negative";
+
+  if (Number(ltcg) < 0) errors.ltcg = "Value cannot be negative";
+
+  const isValid = Object.keys(errors).length === 0;
+  const hasInput = Number(salary) > 0 || Number(ifhp) !== 0 || Number(pgbp) > 0 || Number(ifos) > 0 || Number(ltcg) > 0;
+  const canCalculate = isValid && hasInput;
+
+  const resultRef = useRef<HTMLDivElement>(null);
 
   const [darkMode, setDarkMode] = useState<boolean>(true);
   const [mounted, setMounted] = useState(false);
@@ -55,21 +70,19 @@ export default function TaxCalculator() {
     }
   }, [darkMode, mounted]);
 
-  const validate = () => {
-    const newErrors: Record<string, string> = {};
-    if (Number(salary) < 0) newErrors.salary = "Salary cannot be negative";
-    if (Number(ifhp) < -200000)
-      newErrors.ifhp = "House property loss capped at ₹2,00,000";
-    if (Number(pgbp) < 0) newErrors.pgbp = "Value cannot be negative";
-    if (Number(ifos) < 0) newErrors.ifos = "Value cannot be negative";
-    if (Number(ltcg) < 0) newErrors.ltcg = "Value cannot be negative";
+  useEffect(() => {
+    if (result && resultRef.current) {
+      // Small delay for a smooth "lazy" feel and to ensure DOM update
+      setTimeout(() => {
+        resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [result]);
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+
 
   const calculateTax = () => {
-    if (!validate()) return;
+    if (!canCalculate) return;
 
     const valSalary = Number(salary) || 0;
     const rawIfhp = Number(ifhp) || 0;
@@ -169,7 +182,7 @@ export default function TaxCalculator() {
     setPgbp("");
     setIfos("");
     setLtcg("");
-    setErrors({});
+    setLtcg("");
     setResult(null);
   };
 
@@ -276,8 +289,8 @@ export default function TaxCalculator() {
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-xl shadow-lg transition-colors duration-200" id="calculator">
-      <div className="flex justify-between items-center mb-6 pl-1 pr-1 md:px-0 relative">
+    <div className="w-full max-w-4xl mx-auto p-4 md:p-6 bg-white dark:bg-gray-900 rounded-xl shadow-lg transition-colors duration-200" id="calculator">
+      <div className="flex justify-between items-center mb-4 md:mb-6 pl-1 pr-1 md:px-0 relative">
         <h2 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-gray-100 flex-1 text-center leading-tight">
           Income Tax Calculator
         </h2>
@@ -299,7 +312,7 @@ export default function TaxCalculator() {
       </div>
 
       {/* Regime Toggle */}
-      <div className="flex justify-center mb-8">
+      <div className="flex justify-center mb-6 md:mb-8">
         <div className="bg-gray-100 dark:bg-gray-700 p-1 rounded-lg inline-flex w-full md:w-auto">
           <button
             onClick={() => setRegime("new")}
@@ -322,7 +335,7 @@ export default function TaxCalculator() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className={`transition-all duration-500 ease-in-out w-full ${result ? "grid grid-cols-1 md:grid-cols-2 gap-6 items-start" : "max-w-lg mx-auto"}`}>
         <div className="space-y-4">
           <InputGroup
             label="Salary (Gross)"
@@ -364,14 +377,21 @@ export default function TaxCalculator() {
             </button>
             <button
               onClick={calculateTax}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition duration-200 cursor-pointer text-sm md:text-base"
+              disabled={!canCalculate}
+              className={`flex-1 font-semibold py-3 px-4 rounded-lg transition duration-200 text-sm md:text-base ${canCalculate
+                ? "bg-blue-600 hover:bg-blue-700 text-white cursor-pointer"
+                : "bg-gray-400 text-gray-200 cursor-not-allowed"
+                }`}
             >
               Calculate Tax
             </button>
           </div>
         </div>
 
-        <div className="bg-gray-50 dark:bg-gray-700 p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-600">
+        <div
+          ref={resultRef}
+          className={`bg-gray-50 dark:bg-gray-700 p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-600 ${!result ? "hidden" : "animate-fade-in-up"}`}
+        >
           <h3 className="text-lg md:text-xl font-semibold mb-4 text-gray-700 dark:text-gray-200 border-b dark:border-gray-600 pb-2 flex justify-between items-center">
             <span>Tax Breakdown</span>
             <span className="text-xs md:text-sm font-normal text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-1 rounded">
@@ -379,7 +399,7 @@ export default function TaxCalculator() {
             </span>
           </h3>
           {result ? (
-            <div className="space-y-3 text-sm md:text-base">
+            <div className="space-y-3 text-sm md:text-base animate-fade-in-up">
               <SummaryRow
                 label="Standard Deduction"
                 value={result.netSalary > 0 ? result.standardDeduction : "₹" + salary}
@@ -464,21 +484,25 @@ export default function TaxCalculator() {
                   </span>
                 </div>
               </div>
-              <button
-                onClick={downloadPDF}
-                className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-              >
-                <span className="text-xl">⬇</span> Download Tax Breakdown PDF
-              </button>
             </div>
           ) : (
             <div className="text-gray-500 dark:text-gray-400 text-center py-10">
               Click &quot;Calculate Tax&quot; to see the breakdown.
             </div>
           )}
+          <button
+            onClick={downloadPDF}
+            disabled={!result}
+            className={`w-full mt-4 font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 ${result
+              ? "bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+              : "bg-gray-400 text-gray-200 cursor-not-allowed"
+              }`}
+          >
+            <span className="text-xl">⬇</span> Download Tax Breakdown PDF
+          </button>
         </div>
       </div>
-      <div className="mt-8 text-center text-gray-500 dark:text-gray-400 text-sm font-medium">
+      <div className="mt-8 text-center text-gray-500 dark:text-gray-400 text-sm font-medium hidden md:block">
         Developed by Kishorkumar P
       </div>
     </div>
