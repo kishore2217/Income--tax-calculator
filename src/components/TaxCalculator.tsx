@@ -33,14 +33,10 @@ export default function TaxCalculator() {
 
   useEffect(() => {
     setMounted(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-
 
   useEffect(() => {
     if (!mounted) return;
-
     if (darkMode) {
       document.documentElement.classList.add("dark");
       localStorage.setItem("theme", "dark");
@@ -52,10 +48,9 @@ export default function TaxCalculator() {
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
-    if (!salary) newErrors.salary = "Salary is required";
-    else if (Number(salary) < 0) newErrors.salary = "Salary cannot be negative";
-
-    if (Number(ifhp) < 0) newErrors.ifhp = "Value cannot be negative";
+    if (Number(salary) < 0) newErrors.salary = "Salary cannot be negative";
+    if (Number(ifhp) < -200000)
+      newErrors.ifhp = "House property loss capped at ₹2,00,000";
     if (Number(pgbp) < 0) newErrors.pgbp = "Value cannot be negative";
     if (Number(ifos) < 0) newErrors.ifos = "Value cannot be negative";
     if (Number(ltcg) < 0) newErrors.ltcg = "Value cannot be negative";
@@ -73,120 +68,74 @@ export default function TaxCalculator() {
     const valIfos = Number(ifos) || 0;
     const valLtcg = Number(ltcg) || 0;
 
-    // Standard Deduction
-    // New Regime (FY 24-25): 75,000
-    // Old Regime: 50,000
+    /* ---------------- Standard Deduction ---------------- */
     const standardDeduction = regime === "new" ? 75000 : 50000;
-
-    // 1. Net Salary
     const netSalary = Math.max(valSalary - standardDeduction, 0);
 
-    // 1b. Net House Property Income (30% Standard Deduction)
-    const ifhpHasDeduction = rawIfhp > 0;
-    const ifhpDeduction = ifhpHasDeduction ? rawIfhp * 0.3 : 0;
-    const taxableIfhp = rawIfhp - ifhpDeduction;
+    /* ---------------- IFHP ---------------- */
+    let taxableIfhp = 0;
+    let ifhpDeduction = 0;
 
-    // 2. Normal Income
+    if (rawIfhp > 0) {
+      ifhpDeduction = rawIfhp * 0.3;
+      taxableIfhp = rawIfhp * 0.7;
+    } else {
+      taxableIfhp = Math.max(rawIfhp, -200000);
+    }
+
+    /* ---------------- Normal Income ---------------- */
     const normalIncome = netSalary + taxableIfhp + valPgbp + valIfos;
-
-    // 3. Tax on Normal Income
-    let taxNormal = 0;
     const totalIncome = normalIncome + valLtcg;
 
+    /* ---------------- Tax on Normal Income ---------------- */
+    let taxNormal = 0;
+
     if (regime === "new") {
-      // New Regime Slabs (FY 2024-25)
-      // Up to 3,00,000: Nil
-      // 3,00,001 - 7,00,000: 5%
-      // 7,00,001 - 10,00,000: 10%
-      // 10,00,001 - 12,00,000: 15%
-      // 12,00,001 - 15,00,000: 20%
-      // Above 15,00,000: 30%
-      let remaining = normalIncome;
+      let r = normalIncome;
 
-      if (remaining > 1500000) {
-        taxNormal += (remaining - 1500000) * 0.3;
-        remaining = 1500000;
-      }
-      if (remaining > 1200000) {
-        taxNormal += (remaining - 1200000) * 0.2;
-        remaining = 1200000;
-      }
-      if (remaining > 1000000) {
-        taxNormal += (remaining - 1000000) * 0.15;
-        remaining = 1000000;
-      }
-      if (remaining > 700000) {
-        taxNormal += (remaining - 700000) * 0.1;
-        remaining = 700000;
-      }
-      if (remaining > 300000) {
-        taxNormal += (remaining - 300000) * 0.05;
-      }
+      if (r > 1500000) { taxNormal += (r - 1500000) * 0.3; r = 1500000; }
+      if (r > 1200000) { taxNormal += (r - 1200000) * 0.2; r = 1200000; }
+      if (r > 1000000) { taxNormal += (r - 1000000) * 0.15; r = 1000000; }
+      if (r > 700000)  { taxNormal += (r - 700000) * 0.1; r = 700000; }
+      if (r > 300000)  { taxNormal += (r - 300000) * 0.05; }
 
-      // Rebate u/s 87A (New Regime): Tax free if Taxable Income <= 7 Lakhs
-      // (Technically rebate up to 25,000)
-      if (normalIncome <= 700000) {
-        taxNormal = 0;
-      }
-
+      // Rebate u/s 87A
+      if (normalIncome <= 700000) taxNormal = 0;
     } else {
-      // Old Regime Slabs
-      // Up to 2.5L: Nil
-      // 2.5L - 5L: 5%
-      // 5L - 10L: 20%
-      // > 10L: 30%
-      let remaining = normalIncome;
+      let r = normalIncome;
 
-      if (remaining > 1000000) {
-        taxNormal += (remaining - 1000000) * 0.3;
-        remaining = 1000000;
-      }
-      if (remaining > 500000) {
-        taxNormal += (remaining - 500000) * 0.2;
-        remaining = 500000;
-      }
-      if (remaining > 250000) {
-        taxNormal += (remaining - 250000) * 0.05;
-      }
+      if (r > 1000000) { taxNormal += (r - 1000000) * 0.3; r = 1000000; }
+      if (r > 500000)  { taxNormal += (r - 500000) * 0.2; r = 500000; }
+      if (r > 250000)  { taxNormal += (r - 250000) * 0.05; }
 
-      // Rebate u/s 87A (Old Regime): Tax free if Taxable Income <= 5 Lakhs
-      // (Rebate up to 12,500)
-      if (normalIncome <= 500000) {
-        taxNormal = 0;
-      }
+      if (normalIncome <= 500000) taxNormal = 0;
     }
 
-    // 4. Tax on LTCG (20% flat assumed for simplicity)
-    const taxLtcg = valLtcg * 0.2;
+    /* ---------------- LTCG ---------------- */
+    const taxLtcg = Math.max(valLtcg - 100000, 0) * 0.1;
 
-    // 5. Total Tax Before Surcharge
+    /* ---------------- Surcharge + Cess ---------------- */
     const taxBeforeSurcharge = taxNormal + taxLtcg;
 
-    // 6. Surcharge
     let surchargeRate = 0;
+
     if (totalIncome > 5000000) {
-      if (totalIncome > 10000000) { // > 1 Cr
-        if (totalIncome > 20000000 && regime === "new") {
-          // New Regime Surcharge capped at 25% for > 2Cr
-          surchargeRate = 0.25;
+      if (totalIncome > 10000000) {
+        if (regime === "new") {
+          surchargeRate = totalIncome > 20000000 ? 0.25 : 0.15;
         } else {
-          surchargeRate = 0.15; // > 1Cr - 2Cr (or >1Cr Old Regime for now, keeping simple)
+          if (totalIncome > 50000000) surchargeRate = 0.37;
+          else if (totalIncome > 20000000) surchargeRate = 0.25;
+          else surchargeRate = 0.15;
         }
       } else {
-        surchargeRate = 0.10; // 50L - 1Cr
+        surchargeRate = 0.1;
       }
     }
 
-    // Marginal Relief logic is complex, skipping for "Simple" calculator request unless asked.
-
     const surchargeAmount = taxBeforeSurcharge * surchargeRate;
-
-    // 7. Cess (4%)
-    const taxWithSurcharge = taxBeforeSurcharge + surchargeAmount;
-    const cessAmount = taxWithSurcharge * 0.04;
-
-    // 8. Final
-    const totalTax = taxWithSurcharge + cessAmount;
+    const cessAmount = (taxBeforeSurcharge + surchargeAmount) * 0.04;
+    const totalTax = taxBeforeSurcharge + surchargeAmount + cessAmount;
 
     setResult({
       standardDeduction,
@@ -223,7 +172,7 @@ export default function TaxCalculator() {
       maximumFractionDigits: 0,
     }).format(amount);
   };
-
+  
   return (
     <div className="w-full max-w-4xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-xl shadow-lg transition-colors duration-200" id="calculator">
       <div className="flex justify-between items-center mb-6 pl-1 pr-1 md:px-0 relative">
@@ -278,7 +227,6 @@ export default function TaxCalculator() {
             value={salary}
             onChange={setSalary}
             error={errors.salary}
-            required
           />
           <InputGroup
             label="Income from House Property (Net Annual Value)"
@@ -332,7 +280,7 @@ export default function TaxCalculator() {
             <div className="space-y-3 text-sm md:text-base">
               <SummaryRow
                 label="Standard Deduction"
-                value={result.netSalary > 0 ? result.standardDeduction : "₹" + 0}
+                value={result.netSalary > 0 ? result.standardDeduction : "₹" + salary}
                 formatter={result.netSalary > 0 ? formatCurrency : (v: string | number) => v}
                 highlight
               />
