@@ -29,10 +29,17 @@ export default function TaxCalculator() {
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const [darkMode, setDarkMode] = useState<boolean>(true);
-  const [mounted, setMounted] = useState<boolean>(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
+    const savedTheme = localStorage.getItem("theme");
+    if (savedTheme) {
+      setDarkMode(savedTheme === "dark");
+    } else {
+      setDarkMode(true); // Default to dark
+    }
   }, []);
 
   useEffect(() => {
@@ -96,8 +103,8 @@ export default function TaxCalculator() {
       if (r > 1500000) { taxNormal += (r - 1500000) * 0.3; r = 1500000; }
       if (r > 1200000) { taxNormal += (r - 1200000) * 0.2; r = 1200000; }
       if (r > 1000000) { taxNormal += (r - 1000000) * 0.15; r = 1000000; }
-      if (r > 700000)  { taxNormal += (r - 700000) * 0.1; r = 700000; }
-      if (r > 300000)  { taxNormal += (r - 300000) * 0.05; }
+      if (r > 700000) { taxNormal += (r - 700000) * 0.1; r = 700000; }
+      if (r > 300000) { taxNormal += (r - 300000) * 0.05; }
 
       // Rebate u/s 87A
       if (normalIncome <= 700000) taxNormal = 0;
@@ -105,8 +112,8 @@ export default function TaxCalculator() {
       let r = normalIncome;
 
       if (r > 1000000) { taxNormal += (r - 1000000) * 0.3; r = 1000000; }
-      if (r > 500000)  { taxNormal += (r - 500000) * 0.2; r = 500000; }
-      if (r > 250000)  { taxNormal += (r - 250000) * 0.05; }
+      if (r > 500000) { taxNormal += (r - 500000) * 0.2; r = 500000; }
+      if (r > 250000) { taxNormal += (r - 250000) * 0.05; }
 
       if (normalIncome <= 500000) taxNormal = 0;
     }
@@ -172,7 +179,7 @@ export default function TaxCalculator() {
       maximumFractionDigits: 0,
     }).format(amount);
   };
-  
+
   return (
     <div className="w-full max-w-4xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-xl shadow-lg transition-colors duration-200" id="calculator">
       <div className="flex justify-between items-center mb-6 pl-1 pr-1 md:px-0 relative">
