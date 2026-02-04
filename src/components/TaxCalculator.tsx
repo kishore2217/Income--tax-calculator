@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface TaxResult {
   standardDeduction: number;
@@ -178,6 +180,99 @@ export default function TaxCalculator() {
       currency: "INR",
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const downloadPDF = async () => {
+    if (!result) return;
+
+    const doc = new jsPDF();
+
+    // Helper for PDF currency format to avoid '₹' symbol issues
+    const formatPDFCurrency = (amount: number | string) => {
+      const val = typeof amount === "string" ? Number(amount) : amount;
+      if (isNaN(val)) return "0";
+      return new Intl.NumberFormat("en-IN").format(val);
+    };
+
+    // Load watermark image
+    let imgData: string | null = null;
+    try {
+      const response = await fetch("/watermark.jpg");
+      const blob = await response.blob();
+      imgData = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+    } catch (e) {
+      console.error("Failed to load watermark image", e);
+    }
+
+    doc.setFontSize(18);
+    doc.text("Income Tax Breakdown", 14, 20);
+
+    doc.setFontSize(12);
+    doc.text(`Regime: ${regime === "new" ? "New Regime" : "Old Regime"}`, 14, 30);
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, 14, 36);
+
+    const tableData = [
+      ["Standard Deduction", result.netSalary > 0 ? formatPDFCurrency(result.standardDeduction) : formatPDFCurrency(salary)],
+      ["Taxable Salary (Net)", formatPDFCurrency(result.netSalary)],
+      ...(result.ifhpDeduction > 0 ? [["House Property Standard Deduction (30%)", formatPDFCurrency(result.ifhpDeduction)]] : []),
+      ["Other Normal Income", formatPDFCurrency(result.normalIncome - result.netSalary)],
+      ["Total Normal Income", formatPDFCurrency(result.normalIncome)],
+      ["LTCG Income", formatPDFCurrency(Number(ltcg))],
+      ["Total Income", formatPDFCurrency(result.totalIncome)],
+      ["Tax on Normal Income", formatPDFCurrency(result.taxNormal)],
+      ["Tax on LTCG (20%)", formatPDFCurrency(result.taxLtcg)],
+      ["Total Tax Before Surcharge", formatPDFCurrency(result.taxBeforeSurcharge)],
+      ...(result.surchargeAmount > 0 ? [[`Surcharge (${(result.surchargeRate * 100).toFixed(0)}%)`, formatPDFCurrency(result.surchargeAmount)]] : []),
+      ["Health & Education Cess (4%)", formatPDFCurrency(result.cessAmount)],
+      ["Net Tax Payable", formatPDFCurrency(result.totalTax)],
+    ];
+
+    autoTable(doc, {
+      startY: 45,
+      head: [["Description", "Amount (Rs.)"]],
+      body: tableData,
+      theme: "grid",
+      headStyles: { fillColor: [37, 99, 235], halign: "left" }, // Blue-600
+      columnStyles: {
+        0: { cellWidth: 120, halign: "left" },
+        1: { cellWidth: 60, halign: "right" },
+      },
+      foot: [["Net Tax Payable", formatPDFCurrency(result.totalTax)]],
+      footStyles: { fillColor: [243, 244, 246], textColor: [0, 0, 0], fontStyle: "bold", halign: "right" }, // Gray-100
+      didDrawPage: (data) => {
+        // Watermark
+        if (imgData) {
+          const doc = data.doc;
+          const pageWidth = doc.internal.pageSize.getWidth();
+          const pageHeight = doc.internal.pageSize.getHeight();
+
+          // Seal configuration
+          const imgSize = 15;
+          const padding = 15;
+          const x = pageWidth - imgSize - padding;
+          const y = pageHeight - imgSize - padding;
+          const centerX = x + imgSize / 2;
+          const centerY = y + imgSize / 2;
+          const radius = imgSize / 2 + 2;
+
+          // Draw seal circle
+          doc.setDrawColor(150, 150, 150); // Gray border
+          doc.setLineWidth(1);
+          doc.circle(centerX, centerY, radius);
+
+          // Draw image with opacity
+          doc.setGState(new doc.GState({ opacity: 0.30 }));
+          doc.addImage(imgData, "JPEG", x, y, imgSize, imgSize);
+          doc.setGState(new doc.GState({ opacity: 0.0 }));
+        }
+      },
+    });
+
+    doc.save("tax-breakdown.pdf");
   };
 
   return (
@@ -369,6 +464,12 @@ export default function TaxCalculator() {
                   </span>
                 </div>
               </div>
+              <button
+                onClick={downloadPDF}
+                className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+              >
+                <span className="text-xl">⬇</span> Download Tax Breakdown PDF
+              </button>
             </div>
           ) : (
             <div className="text-gray-500 dark:text-gray-400 text-center py-10">
