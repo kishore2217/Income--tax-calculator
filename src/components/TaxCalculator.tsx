@@ -19,7 +19,7 @@ interface TaxResult {
 }
 
 export default function TaxCalculator() {
-  const [salary, setSalary] = useState<string>("");
+  const [salary, setSalary] = useState<string>("0");
   const [ifhp, setIfhp] = useState<string>("");
   const [pgbp, setPgbp] = useState<string>("");
   const [ifos, setIfos] = useState<string>("");
